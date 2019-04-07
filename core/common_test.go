@@ -36,7 +36,7 @@ func (d *testData) IncrementNonce() {
 }
 
 func TestPoW(t *testing.T) {
-	difficulty := 2
+	difficulty := uint64(2)
 	data := &testData{
 		Data:  []byte("test"),
 		Nonce: 0,

@@ -14,7 +14,7 @@ func TestBlockchainDataStructure(t *testing.T) {
 	db, err := db.New(dir)
 	assert.Nil(t, err)
 
-	bc := NewBlockchain(db)
+	bc := NewBlockchain(db, uint64(1))
 	block := bc.NewBlock([]Tx{})
 
 	block2, err := BlockFromBytes(block.Bytes())
@@ -28,7 +28,7 @@ func TestGetBlock(t *testing.T) {
 	db, err := db.New(dir)
 	assert.Nil(t, err)
 
-	bc := NewBlockchain(db)
+	bc := NewBlockchain(db, uint64(1))
 
 	block := bc.NewBlock([]Tx{})
 	assert.Equal(t, block.Height, uint64(1))
@@ -47,12 +47,11 @@ func TestGetPrevBlock(t *testing.T) {
 	db, err := db.New(dir)
 	assert.Nil(t, err)
 
-	difficulty := 1
-	bc := NewBlockchain(db)
+	bc := NewBlockchain(db, uint64(1))
 
 	for i := 0; i < 10; i++ {
 		block := bc.NewBlock([]Tx{})
-		block.CalculatePoW(difficulty)
+		block.CalculatePoW(bc.Difficulty)
 		assert.Equal(t, block.Height, uint64(i+1))
 
 		err = bc.AddBlock(block)
@@ -83,7 +82,7 @@ func TestAddBlockWithTx(t *testing.T) {
 	db, err := db.New(dir)
 	assert.Nil(t, err)
 
-	bc := NewBlockchain(db)
+	bc := NewBlockchain(db, uint64(1))
 
 	var txs []Tx
 	tx := NewTx(addr0, addr1, []Input{}, []Output{})

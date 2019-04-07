@@ -45,9 +45,9 @@ func AddressFromPrivK(privK *ecdsa.PrivateKey) Address {
 	return Address(h)
 }
 
-func (sig *Signature) Bytes(r, s *big.Int) []byte {
-	b := r.Bytes()
-	b = append(b, s.Bytes()...)
+func (sig *Signature) Bytes() []byte {
+	b := sig.R.Bytes()
+	b = append(b, sig.S.Bytes()...)
 	return b
 }
 

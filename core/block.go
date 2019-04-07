@@ -43,6 +43,20 @@ type Block struct {
 	Signature []byte
 }
 
+func (block Block) Copy() *Block {
+	return &Block{
+		Height:    block.Height,
+		PrevHash:  block.PrevHash,
+		NextHash:  block.NextHash,
+		Txs:       block.Txs,
+		Miner:     block.Miner,
+		Timestamp: block.Timestamp,
+		Nonce:     block.Nonce,
+		Hash:      block.Hash,
+		Signature: block.Signature,
+	}
+}
+
 // Bytes outputs a byte array containing the data of the Block
 func (blk Block) Bytes() []byte {
 	b, _ := json.Marshal(blk)
@@ -56,14 +70,23 @@ func (blk *Block) GetNonce() uint64 {
 func (blk *Block) IncrementNonce() {
 	blk.Nonce++
 }
-func (block *Block) CalculatePoW(difficulty int) error {
-	hash := HashBytes(block.Bytes())
+func (block *Block) CalculatePoW(difficulty uint64) error {
+	blockCopy := block.Copy()
+	blockCopy.Hash = Hash{}
+
+	hash := HashBytes(blockCopy.Bytes())
 	for !CheckPoW(hash, difficulty) {
-		block.IncrementNonce()
-		hash = HashBytes(block.Bytes())
+		blockCopy.IncrementNonce()
+		hash = HashBytes(blockCopy.Bytes())
 	}
 	block.Hash = hash
 	return nil
+}
+
+func CheckBlockPoW(block *Block, difficulty uint64) bool {
+	blockCopy := block.Copy()
+	blockCopy.Hash = Hash{}
+	return CheckPoW(HashBytes(blockCopy.Bytes()), difficulty)
 }
 
 func BlockFromBytes(b []byte) (*Block, error) {

@@ -8,18 +8,20 @@ import (
 )
 
 type Blockchain struct {
-	Id        []byte // Id allows to have multiple blockchains
-	Genesis   Hash
-	LastBlock *Block
-	db        *db.Db
+	Id         []byte // Id allows to have multiple blockchains
+	Difficulty uint64
+	Genesis    Hash
+	LastBlock  *Block
+	db         *db.Db
 }
 
-func NewBlockchain(database *db.Db) *Blockchain {
+func NewBlockchain(database *db.Db, dif uint64) *Blockchain {
 	blockchain := &Blockchain{
-		Id:        []byte{},
-		Genesis:   Hash{},
-		LastBlock: &Block{},
-		db:        database,
+		Id:         []byte{},
+		Difficulty: dif,
+		Genesis:    HashBytes([]byte("genesis")),
+		LastBlock:  &Block{},
+		db:         database,
 	}
 	return blockchain
 }

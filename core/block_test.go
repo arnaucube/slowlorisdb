@@ -18,11 +18,14 @@ func TestBlock(t *testing.T) {
 		Hash:      HashBytes([]byte("blockhash")),
 	}
 
-	block, err := BlockFromBytes(block.Bytes())
+	blockParsed, err := BlockFromBytes(block.Bytes())
 	assert.Nil(t, err)
-	assert.Equal(t, block.Bytes(), block.Bytes())
+	assert.Equal(t, blockParsed.Bytes(), block.Bytes())
 
-	difficulty := 2
+	blockCopy := block.Copy()
+	assert.Equal(t, blockCopy.Bytes(), block.Bytes())
+
+	difficulty := uint64(2)
 	nonce, err := CalculatePoW(block, difficulty)
 	assert.Nil(t, err)
 	block.Nonce = nonce
@@ -47,7 +50,7 @@ func TestNewBlock(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, block2.Bytes(), block.Bytes())
 
-	difficulty := 2
+	difficulty := uint64(2)
 	nonce, err := CalculatePoW(block, difficulty)
 	assert.Nil(t, err)
 	block.Nonce = nonce

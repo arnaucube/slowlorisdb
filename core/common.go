@@ -31,7 +31,7 @@ type PoWData interface {
 }
 
 // CheckPoW verifies the PoW difficulty of a Hash
-func CheckPoW(hash Hash, difficulty int) bool {
+func CheckPoW(hash Hash, difficulty uint64) bool {
 	var empty [32]byte
 	if !bytes.Equal(hash[:][0:difficulty], empty[0:difficulty]) {
 		return false
@@ -40,7 +40,7 @@ func CheckPoW(hash Hash, difficulty int) bool {
 }
 
 // CalculatePoW calculates the nonce for the given data in order to fit in the current Proof of Work difficulty
-func CalculatePoW(data PoWData, difficulty int) (uint64, error) {
+func CalculatePoW(data PoWData, difficulty uint64) (uint64, error) {
 	hash := HashBytes(data.Bytes())
 	for !CheckPoW(hash, difficulty) {
 		data.IncrementNonce()

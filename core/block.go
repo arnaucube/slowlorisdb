@@ -6,31 +6,6 @@ import (
 	"time"
 )
 
-type Input struct {
-}
-type Output struct {
-}
-
-// Tx holds the data structure of a transaction
-type Tx struct {
-	From       Address
-	To         Address
-	InputCount uint64
-	Inputs     []Input
-	Outputs    []Output
-}
-
-func NewTx(from, to Address, in []Input, out []Output) *Tx {
-	tx := &Tx{
-		From:       from,
-		To:         to,
-		InputCount: uint64(len(in)),
-		Inputs:     in,
-		Outputs:    out,
-	}
-	return tx
-}
-
 // Block holds the data structure for the block
 type Block struct {
 	Height    uint64

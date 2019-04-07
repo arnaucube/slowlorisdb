@@ -35,6 +35,10 @@ func (node *Node) Sign(m []byte) (*core.Signature, error) {
 	return core.Sign(node.PrivK, m)
 }
 
+func (node *Node) SignBlock(block *core.Block) (*core.Signature, error) {
+	return core.Sign(node.PrivK, block.Hash[:])
+}
+
 func (node *Node) AddToPendingTxs(tx core.Tx) {
 	node.PendingTxs = append(node.PendingTxs, tx)
 }
@@ -45,7 +49,7 @@ func (node *Node) BlockFromPendingTxs() (*core.Block, error) {
 	if err != nil {
 		return nil, err
 	}
-	sig, err := node.Sign(block.Bytes())
+	sig, err := node.SignBlock(block)
 	if err != nil {
 		return nil, err
 	}

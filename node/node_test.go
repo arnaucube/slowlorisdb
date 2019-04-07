@@ -51,23 +51,28 @@ func TestBlockFromPendingTxs(t *testing.T) {
 	tx := core.NewTx(addr0, addr1, []core.Input{}, []core.Output{})
 	node.AddToPendingTxs(*tx)
 	block, err := node.BlockFromPendingTxs()
+	assert.Nil(t, err)
 	assert.True(t, core.CheckBlockPoW(block, node.Bc.Difficulty))
-	// TODO add VerifyBlockSignature
+	assert.True(t, core.VerifyBlockSignature(&node.PrivK.PublicKey, block))
 }
 
-// func TestBlockFromPendingTxsIteration(t *testing.T) {
-//         dir, err := ioutil.TempDir("", "db")
-//         assert.Nil(t, err)
-//         db, err := db.New(dir)
-//         assert.Nil(t, err)
-//
-//         node, err := NewNode(db, uint64(1))
-//         assert.Nil(t, err)
-//
-//         addr0 := core.Address(core.HashBytes([]byte("addr0")))
-//         addr1 := core.Address(core.HashBytes([]byte("addr1")))
-//         for i := 0; i < 10; i++ {
-//                 tx := core.NewTx(addr0, addr1, []core.Input{}, []core.Output{})
-//
-//         }
-// }
+func TestBlockFromPendingTxsIteration(t *testing.T) {
+	dir, err := ioutil.TempDir("", "db")
+	assert.Nil(t, err)
+	db, err := db.New(dir)
+	assert.Nil(t, err)
+
+	node, err := NewNode(db, uint64(1))
+	assert.Nil(t, err)
+
+	addr0 := core.Address(core.HashBytes([]byte("addr0")))
+	addr1 := core.Address(core.HashBytes([]byte("addr1")))
+	for i := 0; i < 10; i++ {
+		tx := core.NewTx(addr0, addr1, []core.Input{}, []core.Output{})
+		node.AddToPendingTxs(*tx)
+	}
+	block, err := node.BlockFromPendingTxs()
+	assert.Nil(t, err)
+	assert.True(t, core.CheckBlockPoW(block, node.Bc.Difficulty))
+	assert.True(t, core.VerifyBlockSignature(&node.PrivK.PublicKey, block))
+}

@@ -1,6 +1,7 @@
 package core
 
 import (
+	"crypto/ecdsa"
 	"encoding/json"
 	"time"
 )
@@ -80,13 +81,24 @@ func (block *Block) CalculatePoW(difficulty uint64) error {
 		hash = HashBytes(blockCopy.Bytes())
 	}
 	block.Hash = hash
+	block.Nonce = blockCopy.Nonce
 	return nil
 }
 
 func CheckBlockPoW(block *Block, difficulty uint64) bool {
 	blockCopy := block.Copy()
 	blockCopy.Hash = Hash{}
+	blockCopy.Signature = []byte{}
 	return CheckPoW(HashBytes(blockCopy.Bytes()), difficulty)
+}
+
+func VerifyBlockSignature(pubK *ecdsa.PublicKey, block *Block) bool {
+	sig, err := SignatureFromBytes(block.Signature)
+	if err != nil {
+		return false
+	}
+
+	return VerifySignature(pubK, block.Hash[:], *sig)
 }
 
 func BlockFromBytes(b []byte) (*Block, error) {

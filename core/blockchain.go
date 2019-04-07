@@ -1,18 +1,25 @@
 package core
 
 import (
+	"bytes"
+	"crypto/ecdsa"
 	"errors"
-	"time"
 
 	"github.com/arnaucube/slowlorisdb/db"
 )
+
+type PoA struct {
+	AuthMiners []*ecdsa.PublicKey
+}
 
 type Blockchain struct {
 	Id         []byte // Id allows to have multiple blockchains
 	Difficulty uint64
 	Genesis    Hash
 	LastBlock  *Block
-	db         *db.Db
+	blockdb    *db.Db
+	txdb       *db.Db
+	PoA        PoA
 }
 
 func NewBlockchain(database *db.Db, dif uint64) *Blockchain {
@@ -21,23 +28,25 @@ func NewBlockchain(database *db.Db, dif uint64) *Blockchain {
 		Difficulty: dif,
 		Genesis:    HashBytes([]byte("genesis")),
 		LastBlock:  &Block{},
-		db:         database,
+		blockdb:    database,
+		PoA:        PoA{},
 	}
 	return blockchain
 }
 
-func (bc *Blockchain) NewBlock(txs []Tx) *Block {
-	block := &Block{
-		Height:    bc.GetHeight() + 1,
-		PrevHash:  bc.LastBlock.Hash,
-		Txs:       txs,
-		Miner:     Address{}, // TODO put the node address
-		Timestamp: time.Now(),
-		Nonce:     0,
-		Hash:      Hash{},
-		Signature: []byte{},
+func NewPoABlockchain(database *db.Db, authNodes []*ecdsa.PublicKey) *Blockchain {
+	poa := PoA{
+		AuthMiners: authNodes,
 	}
-	return block
+	blockchain := &Blockchain{
+		Id:         []byte{},
+		Difficulty: uint64(0),
+		Genesis:    HashBytes([]byte("genesis")), // tmp
+		LastBlock:  &Block{},
+		blockdb:    database,
+		PoA:        poa,
+	}
+	return blockchain
 }
 
 func (bc *Blockchain) GetHeight() uint64 {
@@ -50,12 +59,12 @@ func (bc *Blockchain) GetLastBlock() *Block {
 
 func (bc *Blockchain) AddBlock(block *Block) error {
 	bc.LastBlock = block
-	err := bc.db.Put(block.Hash[:], block.Bytes())
+	err := bc.blockdb.Put(block.Hash[:], block.Bytes())
 	return err
 }
 
 func (bc *Blockchain) GetBlock(hash Hash) (*Block, error) {
-	v, err := bc.db.Get(hash[:])
+	v, err := bc.blockdb.Get(hash[:])
 	if err != nil {
 		return nil, err
 	}
@@ -81,3 +90,31 @@ func (bc *Blockchain) GetPrevBlock(hash Hash) (*Block, error) {
 
 	return prevBlock, nil
 }
+
+func (bc *Blockchain) VerifyBlockSignature(block *Block) bool {
+	// check if the signer is one of the blockchain.AuthMiners
+	signerIsMiner := false
+	for _, pubK := range bc.PoA.AuthMiners {
+		if bytes.Equal(PackPubK(pubK), block.Miner[:]) {
+			signerIsMiner = true
+		}
+	}
+	if !signerIsMiner && len(bc.PoA.AuthMiners) > 0 {
+		return false
+	}
+
+	// get the signature
+	sig, err := SignatureFromBytes(block.Signature)
+	if err != nil {
+		return false
+	}
+
+	// check if the signature is by the miner
+	return VerifySignature(block.MinerPubK, block.Hash[:], *sig)
+}
+
+// func (bc *Blockchain) Mint(toAddr Address, amount uint64) error {
+//         fromAddr := Address(HashBytes([]byte("mint")))
+//         out :=
+//         tx := NewTx(fromAddr, toAddr, []Input, )
+// }

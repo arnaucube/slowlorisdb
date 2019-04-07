@@ -46,5 +46,7 @@ func CheckTx(tx *Tx) bool {
 	if totalIn < totalOut {
 		return false
 	}
+
+	// TODO check signature
 	return true
 }

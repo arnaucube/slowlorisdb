@@ -10,7 +10,6 @@ import (
 func TestBlock(t *testing.T) {
 	block := &Block{
 		PrevHash:  HashBytes([]byte("prevhash")),
-		NextHash:  HashBytes([]byte("nextHash")),
 		Txs:       []Tx{},
 		Miner:     Address(HashBytes([]byte("addrfromminer"))),
 		Timestamp: time.Now(),
@@ -38,7 +37,6 @@ func TestBlock(t *testing.T) {
 func TestNewBlock(t *testing.T) {
 	block := &Block{
 		PrevHash:  HashBytes([]byte("prevhash")),
-		NextHash:  HashBytes([]byte("nextHash")),
 		Txs:       []Tx{},
 		Miner:     Address(HashBytes([]byte("addrfromminer"))),
 		Timestamp: time.Now(),

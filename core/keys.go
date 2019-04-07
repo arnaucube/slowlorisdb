@@ -94,7 +94,6 @@ func Sign(privK *ecdsa.PrivateKey, m []byte) (*Signature, error) {
 
 func VerifySignature(pubK *ecdsa.PublicKey, m []byte, sig Signature) bool {
 	hashMsg := HashBytes(m)
-
 	verified := ecdsa.Verify(pubK, hashMsg[:], sig.R, sig.S)
 	return verified
 }

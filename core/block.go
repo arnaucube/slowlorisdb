@@ -10,9 +10,9 @@ import (
 type Block struct {
 	Height    uint64
 	PrevHash  Hash
-	NextHash  Hash
 	Txs       []Tx
 	Miner     Address
+	MinerPubK *ecdsa.PublicKey // tmp meanwhile no ecrecover function
 	Timestamp time.Time
 	Nonce     uint64
 	Hash      Hash
@@ -23,9 +23,9 @@ func (block Block) Copy() *Block {
 	return &Block{
 		Height:    block.Height,
 		PrevHash:  block.PrevHash,
-		NextHash:  block.NextHash,
 		Txs:       block.Txs,
 		Miner:     block.Miner,
+		MinerPubK: block.MinerPubK,
 		Timestamp: block.Timestamp,
 		Nonce:     block.Nonce,
 		Hash:      block.Hash,
@@ -65,15 +65,6 @@ func CheckBlockPoW(block *Block, difficulty uint64) bool {
 	blockCopy.Hash = Hash{}
 	blockCopy.Signature = []byte{}
 	return CheckPoW(HashBytes(blockCopy.Bytes()), difficulty)
-}
-
-func VerifyBlockSignature(pubK *ecdsa.PublicKey, block *Block) bool {
-	sig, err := SignatureFromBytes(block.Signature)
-	if err != nil {
-		return false
-	}
-
-	return VerifySignature(pubK, block.Hash[:], *sig)
 }
 
 func BlockFromBytes(b []byte) (*Block, error) {

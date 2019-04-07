@@ -2,31 +2,28 @@ package node
 
 import (
 	"crypto/ecdsa"
+	"time"
 
 	"github.com/arnaucube/slowlorisdb/core"
-	"github.com/arnaucube/slowlorisdb/db"
 )
 
 type Node struct {
 	PrivK      *ecdsa.PrivateKey
 	Addr       core.Address
 	Bc         *core.Blockchain
+	Miner      bool // indicates if the node is running as a miner
 	PendingTxs []core.Tx
 }
 
-func NewNode(db *db.Db, dif uint64) (*Node, error) {
-	privK, err := core.NewKey()
-	if err != nil {
-		return nil, err
-	}
+func NewNode(privK *ecdsa.PrivateKey, bc *core.Blockchain, isMiner bool) (*Node, error) {
 	addr := core.AddressFromPrivK(privK)
 
-	bc := core.NewBlockchain(db, dif)
-
 	node := &Node{
-		PrivK: privK,
-		Addr:  addr,
-		Bc:    bc,
+		PrivK:      privK,
+		Addr:       addr,
+		Bc:         bc,
+		Miner:      isMiner,
+		PendingTxs: []core.Tx{},
 	}
 	return node, nil
 }
@@ -44,7 +41,7 @@ func (node *Node) AddToPendingTxs(tx core.Tx) {
 }
 
 func (node *Node) BlockFromPendingTxs() (*core.Block, error) {
-	block := node.Bc.NewBlock(node.PendingTxs)
+	block := node.NewBlock(node.PendingTxs)
 	err := block.CalculatePoW(node.Bc.Difficulty)
 	if err != nil {
 		return nil, err
@@ -55,4 +52,19 @@ func (node *Node) BlockFromPendingTxs() (*core.Block, error) {
 	}
 	block.Signature = sig.Bytes()
 	return block, nil
+}
+
+func (node *Node) NewBlock(txs []core.Tx) *core.Block {
+	block := &core.Block{
+		Height:    node.Bc.GetHeight() + 1,
+		PrevHash:  node.Bc.LastBlock.Hash,
+		Txs:       txs,
+		Miner:     core.Address{},
+		MinerPubK: &node.PrivK.PublicKey,
+		Timestamp: time.Now(),
+		Nonce:     0,
+		Hash:      core.Hash{},
+		Signature: []byte{},
+	}
+	return block
 }

@@ -15,7 +15,12 @@ func TestNode(t *testing.T) {
 	db, err := db.New(dir)
 	assert.Nil(t, err)
 
-	node, err := NewNode(db, uint64(1))
+	privK, err := core.NewKey()
+	assert.Nil(t, err)
+
+	dif := uint64(1)
+	bc := core.NewBlockchain(db, dif)
+	node, err := NewNode(privK, bc, true)
 	assert.Nil(t, err)
 
 	assert.Equal(t, node.Addr, core.AddressFromPrivK(node.PrivK))
@@ -27,7 +32,12 @@ func TestNodeSignature(t *testing.T) {
 	db, err := db.New(dir)
 	assert.Nil(t, err)
 
-	node, err := NewNode(db, uint64(1))
+	privK, err := core.NewKey()
+	assert.Nil(t, err)
+
+	dif := uint64(1)
+	bc := core.NewBlockchain(db, dif)
+	node, err := NewNode(privK, bc, true)
 	assert.Nil(t, err)
 
 	m := []byte("test")
@@ -43,7 +53,12 @@ func TestBlockFromPendingTxs(t *testing.T) {
 	db, err := db.New(dir)
 	assert.Nil(t, err)
 
-	node, err := NewNode(db, uint64(1))
+	privK, err := core.NewKey()
+	assert.Nil(t, err)
+
+	dif := uint64(1)
+	bc := core.NewBlockchain(db, dif)
+	node, err := NewNode(privK, bc, true)
 	assert.Nil(t, err)
 
 	addr0 := core.Address(core.HashBytes([]byte("addr0")))
@@ -53,7 +68,7 @@ func TestBlockFromPendingTxs(t *testing.T) {
 	block, err := node.BlockFromPendingTxs()
 	assert.Nil(t, err)
 	assert.True(t, core.CheckBlockPoW(block, node.Bc.Difficulty))
-	assert.True(t, core.VerifyBlockSignature(&node.PrivK.PublicKey, block))
+	assert.True(t, node.Bc.VerifyBlockSignature(block))
 }
 
 func TestBlockFromPendingTxsIteration(t *testing.T) {
@@ -62,7 +77,12 @@ func TestBlockFromPendingTxsIteration(t *testing.T) {
 	db, err := db.New(dir)
 	assert.Nil(t, err)
 
-	node, err := NewNode(db, uint64(1))
+	privK, err := core.NewKey()
+	assert.Nil(t, err)
+
+	dif := uint64(1)
+	bc := core.NewBlockchain(db, dif)
+	node, err := NewNode(privK, bc, true)
 	assert.Nil(t, err)
 
 	addr0 := core.Address(core.HashBytes([]byte("addr0")))
@@ -74,5 +94,5 @@ func TestBlockFromPendingTxsIteration(t *testing.T) {
 	block, err := node.BlockFromPendingTxs()
 	assert.Nil(t, err)
 	assert.True(t, core.CheckBlockPoW(block, node.Bc.Difficulty))
-	assert.True(t, core.VerifyBlockSignature(&node.PrivK.PublicKey, block))
+	assert.True(t, node.Bc.VerifyBlockSignature(block))
 }

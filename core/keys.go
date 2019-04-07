@@ -45,26 +45,35 @@ func AddressFromPrivK(privK *ecdsa.PrivateKey) Address {
 	return Address(h)
 }
 
-func PackSignature(r, s *big.Int) []byte {
-	sig := r.Bytes()
-	sig = append(sig, s.Bytes()...)
-	return sig
+func (sig *Signature) Bytes(r, s *big.Int) []byte {
+	b := r.Bytes()
+	b = append(b, s.Bytes()...)
+	return b
 }
 
-func UnpackSignature(sig []byte) (*big.Int, *big.Int, error) {
-	if len(sig) != 64 {
-		return nil, nil, errors.New("Invalid signature")
+func SignatureFromBytes(b []byte) (*Signature, error) {
+	if len(b) != 64 {
+		return nil, errors.New("Invalid signature")
 	}
-	rBytes := sig[:32]
-	sBytes := sig[32:]
+	rBytes := b[:32]
+	sBytes := b[32:]
 
 	r := new(big.Int).SetBytes(rBytes)
 	s := new(big.Int).SetBytes(sBytes)
 
-	return r, s, nil
+	sig := &Signature{
+		R: r,
+		S: s,
+	}
+	return sig, nil
 }
 
-func Sign(privK *ecdsa.PrivateKey, m []byte) ([]byte, error) {
+type Signature struct {
+	R *big.Int
+	S *big.Int
+}
+
+func Sign(privK *ecdsa.PrivateKey, m []byte) (*Signature, error) {
 	r := big.NewInt(0)
 	s := big.NewInt(0)
 
@@ -72,23 +81,20 @@ func Sign(privK *ecdsa.PrivateKey, m []byte) ([]byte, error) {
 
 	r, s, err := ecdsa.Sign(rand.Reader, privK, hashMsg[:])
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
-
-	sig := PackSignature(r, s)
+	sig := &Signature{
+		R: r,
+		S: s,
+	}
 
 	return sig, nil
 
 }
 
-func VerifySignature(pubK *ecdsa.PublicKey, m []byte, sig []byte) bool {
+func VerifySignature(pubK *ecdsa.PublicKey, m []byte, sig Signature) bool {
 	hashMsg := HashBytes(m)
 
-	r, s, err := UnpackSignature(sig)
-	if err != nil {
-		return false
-	}
-
-	verified := ecdsa.Verify(pubK, hashMsg[:], r, s)
+	verified := ecdsa.Verify(pubK, hashMsg[:], sig.R, sig.S)
 	return verified
 }

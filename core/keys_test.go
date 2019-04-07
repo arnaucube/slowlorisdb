@@ -29,6 +29,6 @@ func TestSignAndVerify(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Verify
-	verified := VerifySignature(&privK.PublicKey, m, sig)
+	verified := VerifySignature(&privK.PublicKey, m, *sig)
 	assert.True(t, verified)
 }

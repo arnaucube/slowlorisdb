@@ -2,8 +2,9 @@ package core
 
 import (
 	"errors"
-	"slothdb/db"
 	"time"
+
+	"github.com/arnaucube/slowlorisdb/db"
 )
 
 type Blockchain struct {

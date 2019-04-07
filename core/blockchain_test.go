@@ -2,9 +2,9 @@ package core
 
 import (
 	"io/ioutil"
-	"slothdb/db"
 	"testing"
 
+	"github.com/arnaucube/slowlorisdb/db"
 	"github.com/stretchr/testify/assert"
 )
 

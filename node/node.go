@@ -32,8 +32,13 @@ func (node *Node) Sign(m []byte) (*core.Signature, error) {
 	return core.Sign(node.PrivK, m)
 }
 
-func (node *Node) SignBlock(block *core.Block) (*core.Signature, error) {
-	return core.Sign(node.PrivK, block.Hash[:])
+func (node *Node) SignBlock(block *core.Block) error {
+	sig, err := core.Sign(node.PrivK, block.Hash[:])
+	if err != nil {
+		return err
+	}
+	block.Signature = sig.Bytes()
+	return nil
 }
 
 func (node *Node) AddToPendingTxs(tx core.Tx) {
@@ -42,15 +47,17 @@ func (node *Node) AddToPendingTxs(tx core.Tx) {
 
 func (node *Node) BlockFromPendingTxs() (*core.Block, error) {
 	block := node.NewBlock(node.PendingTxs)
+	block.PrevHash = node.Bc.LastBlock.Hash
 	err := block.CalculatePoW(node.Bc.Difficulty)
 	if err != nil {
 		return nil, err
 	}
-	sig, err := node.SignBlock(block)
+	err = node.SignBlock(block)
 	if err != nil {
 		return nil, err
 	}
-	block.Signature = sig.Bytes()
+	block.CalculateHash()
+
 	return block, nil
 }
 
@@ -67,4 +74,24 @@ func (node *Node) NewBlock(txs []core.Tx) *core.Block {
 		Signature: []byte{},
 	}
 	return block
+}
+
+func (node *Node) CreateGenesis() (*core.Block, error) {
+	block := &core.Block{
+		Height:    uint64(0),
+		PrevHash:  core.Hash{},
+		Txs:       []core.Tx{},
+		Miner:     node.Addr,
+		MinerPubK: &node.PrivK.PublicKey,
+		Timestamp: time.Now(),
+		Nonce:     uint64(0),
+		Hash:      core.Hash{},
+		Signature: []byte{},
+	}
+
+	err := node.SignBlock(block)
+	if err != nil {
+		return nil, err
+	}
+	return block, nil
 }

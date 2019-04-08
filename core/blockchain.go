@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"errors"
+	"fmt"
 
 	"github.com/arnaucube/slowlorisdb/db"
 )
@@ -91,7 +92,7 @@ func (bc *Blockchain) GetPrevBlock(hash Hash) (*Block, error) {
 	return prevBlock, nil
 }
 
-func (bc *Blockchain) VerifyBlockSignature(block *Block) bool {
+func (bc *Blockchain) verifyBlockSignature(block *Block) bool {
 	// check if the signer is one of the blockchain.AuthMiners
 	signerIsMiner := false
 	for _, pubK := range bc.PoA.AuthMiners {
@@ -111,6 +112,33 @@ func (bc *Blockchain) VerifyBlockSignature(block *Block) bool {
 
 	// check if the signature is by the miner
 	return VerifySignature(block.MinerPubK, block.Hash[:], *sig)
+}
+
+func (bc *Blockchain) VerifyBlock(block *Block) bool {
+	// verify block signature
+	if !bc.verifyBlockSignature(block) {
+		return false
+	}
+
+	// verify timestamp
+
+	// verify prev hash
+	// check that the block.PrevHash is the blockchain current last block
+	fmt.Println(block.PrevHash)
+	fmt.Println(bc.LastBlock.Hash)
+	if !bytes.Equal(block.PrevHash[:], bc.LastBlock.Hash[:]) {
+		return false
+	}
+
+	// verify block height
+	// check that the block height is the last block + 1
+	if block.Height != bc.LastBlock.Height+1 {
+		return false
+	}
+
+	// verify block transactions
+
+	return true
 }
 
 // func (bc *Blockchain) Mint(toAddr Address, amount uint64) error {

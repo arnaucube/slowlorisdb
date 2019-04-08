@@ -35,8 +35,17 @@ func (block Block) Copy() *Block {
 
 // Bytes outputs a byte array containing the data of the Block
 func (blk Block) Bytes() []byte {
+	// TODO add parser, to use minimum amount of bytes
 	b, _ := json.Marshal(blk)
 	return b
+}
+
+func (block *Block) CalculateHash() {
+	blockCopy := block.Copy()
+	blockCopy.Hash = Hash{}
+	blockCopy.Signature = []byte{}
+	hash := HashBytes(blockCopy.Bytes())
+	block.Hash = hash
 }
 
 func (blk *Block) GetNonce() uint64 {

@@ -1,6 +1,7 @@
 package node
 
 import (
+	"fmt"
 	"io/ioutil"
 	"testing"
 
@@ -67,8 +68,9 @@ func TestBlockFromPendingTxs(t *testing.T) {
 	node.AddToPendingTxs(*tx)
 	block, err := node.BlockFromPendingTxs()
 	assert.Nil(t, err)
+	fmt.Println("h", block.Hash)
 	assert.True(t, core.CheckBlockPoW(block, node.Bc.Difficulty))
-	assert.True(t, node.Bc.VerifyBlockSignature(block))
+	assert.True(t, node.Bc.VerifyBlock(block))
 }
 
 func TestBlockFromPendingTxsIteration(t *testing.T) {
@@ -94,5 +96,5 @@ func TestBlockFromPendingTxsIteration(t *testing.T) {
 	block, err := node.BlockFromPendingTxs()
 	assert.Nil(t, err)
 	assert.True(t, core.CheckBlockPoW(block, node.Bc.Difficulty))
-	assert.True(t, node.Bc.VerifyBlockSignature(block))
+	assert.True(t, node.Bc.VerifyBlock(block))
 }

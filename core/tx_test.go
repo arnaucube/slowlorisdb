@@ -7,13 +7,17 @@ import (
 )
 
 func TestTx(t *testing.T) {
-	addr0 := Address(HashBytes([]byte("addr0")))
-	addr1 := Address(HashBytes([]byte("addr1")))
+	privK0, err := NewKey()
+	assert.Nil(t, err)
+	pubK0 := privK0.PublicKey
+	privK1, err := NewKey()
+	assert.Nil(t, err)
+	pubK1 := privK1.PublicKey
 
-	tx := NewTx(addr0, addr1, []Input{}, []Output{})
+	tx := NewTx(&pubK0, &pubK1, []Input{}, []Output{})
 
-	assert.Equal(t, tx.From, addr0)
-	assert.Equal(t, tx.To, addr1)
+	assert.Equal(t, tx.From, &pubK0)
+	assert.Equal(t, tx.To, &pubK1)
 
 	assert.True(t, CheckTx(tx))
 }

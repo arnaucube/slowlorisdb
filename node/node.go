@@ -78,8 +78,8 @@ func (node *Node) NewBlock(txs []core.Tx) *core.Block {
 
 func (node *Node) CreateGenesis() (*core.Block, error) {
 	block := &core.Block{
-		Height:    uint64(0),
-		PrevHash:  core.Hash{},
+		Height:    node.Bc.LastBlock.Height,
+		PrevHash:  node.Bc.LastBlock.Hash,
 		Txs:       []core.Tx{},
 		Miner:     node.Addr,
 		MinerPubK: &node.PrivK.PublicKey,
@@ -93,5 +93,6 @@ func (node *Node) CreateGenesis() (*core.Block, error) {
 	if err != nil {
 		return nil, err
 	}
+	block.CalculateHash()
 	return block, nil
 }

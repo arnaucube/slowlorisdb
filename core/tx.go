@@ -1,25 +1,28 @@
 package core
 
+import "crypto/ecdsa"
+
 type Input struct {
 	TxId  Hash
 	Vout  int // index of the output from the TxId
 	Value uint64
 }
+
 type Output struct {
 	Value uint64
 }
 
 // Tx holds the data structure of a transaction
 type Tx struct {
-	From       Address
-	To         Address
+	From       *ecdsa.PublicKey
+	To         *ecdsa.PublicKey
 	InputCount uint64
 	Inputs     []Input
 	Outputs    []Output
 	Signature  []byte
 }
 
-func NewTx(from, to Address, in []Input, out []Output) *Tx {
+func NewTx(from, to *ecdsa.PublicKey, in []Input, out []Output) *Tx {
 	tx := &Tx{
 		From:       from,
 		To:         to,

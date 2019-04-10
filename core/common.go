@@ -3,6 +3,7 @@ package core
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 )
 
@@ -52,4 +53,18 @@ func CalculatePoW(data PoWData, difficulty uint64) (uint64, error) {
 		hash = HashBytes(data.Bytes())
 	}
 	return data.GetNonce(), nil
+}
+
+func Uint64ToBytes(u uint64) []byte {
+	buff := new(bytes.Buffer)
+	err := binary.Write(buff, binary.LittleEndian, u)
+	if err != nil {
+		panic(err)
+	}
+	return buff.Bytes()
+
+}
+
+func Uint64FromBytes(b []byte) uint64 {
+	return binary.LittleEndian.Uint64(b)
 }

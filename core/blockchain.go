@@ -20,6 +20,8 @@ type Blockchain struct {
 	LastBlock  *Block
 	blockdb    *db.Db
 	txdb       *db.Db
+	addressdb  *db.Db
+	walletsdb  *db.Db
 	PoA        PoA
 }
 
@@ -36,6 +38,10 @@ func NewBlockchain(database *db.Db, dif uint64) *Blockchain {
 }
 
 func NewPoABlockchain(database *db.Db, authNodes []*ecdsa.PublicKey) *Blockchain {
+	blockDb := database.WithPrefix([]byte("blockDb"))
+	txDb := database.WithPrefix([]byte("txDb"))
+	addressDb := database.WithPrefix([]byte("addressDb"))
+
 	poa := PoA{
 		AuthMiners: authNodes,
 	}
@@ -44,7 +50,9 @@ func NewPoABlockchain(database *db.Db, authNodes []*ecdsa.PublicKey) *Blockchain
 		Difficulty: uint64(0),
 		Genesis:    HashBytes([]byte("genesis")), // tmp
 		LastBlock:  &Block{},
-		blockdb:    database,
+		blockdb:    blockDb,
+		txdb:       txDb,
+		addressdb:  addressDb,
 		PoA:        poa,
 	}
 	return blockchain
@@ -64,7 +72,48 @@ func (bc *Blockchain) AddBlock(block *Block) error {
 	}
 	bc.LastBlock = block.Copy()
 	err := bc.blockdb.Put(block.Hash[:], block.Bytes())
-	return err
+	if err != nil {
+		return err
+	}
+
+	// add each tx to txDb & update addressDb balances
+	for _, tx := range block.Txs {
+		err = bc.txdb.Put(tx.TxId[:], tx.Bytes())
+		if err != nil {
+			return err
+		}
+		bc.UpdateWalletsWithNewTx(&tx)
+	}
+	return nil
+}
+
+func (bc *Blockchain) UpdateWalletsWithNewTx(tx *Tx) error {
+	for _, in := range tx.Inputs {
+		balanceBytes, err := bc.addressdb.Get(PackPubK(tx.From))
+		if err != nil {
+			return err
+		}
+		balance := Uint64FromBytes(balanceBytes)
+		balance = balance - in.Value
+		err = bc.addressdb.Put(PackPubK(tx.From), Uint64ToBytes(balance))
+		if err != nil {
+			return err
+		}
+	}
+	for _, out := range tx.Outputs {
+		balanceBytes, err := bc.addressdb.Get(PackPubK(tx.To))
+		if err != nil {
+			return err
+		}
+		balance := Uint64FromBytes(balanceBytes)
+		balance = balance + out.Value
+		err = bc.addressdb.Put(PackPubK(tx.To), Uint64ToBytes(balance))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+
 }
 
 func (bc *Blockchain) GetBlock(hash Hash) (*Block, error) {

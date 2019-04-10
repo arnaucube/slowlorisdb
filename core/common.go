@@ -3,6 +3,7 @@ package core
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/hex"
 )
 
 // Hash is the type for a hash data packet
@@ -15,6 +16,9 @@ func (h *Hash) IsZero() bool {
 		return true
 	}
 	return false
+}
+func (h *Hash) String() string {
+	return hex.EncodeToString(h[:])
 }
 
 // HashBytes performs a hash over a given byte array

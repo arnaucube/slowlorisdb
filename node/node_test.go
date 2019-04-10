@@ -1,7 +1,7 @@
 package node
 
 import (
-	"fmt"
+	"crypto/ecdsa"
 	"io/ioutil"
 	"testing"
 
@@ -10,6 +10,27 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func newTestPoABlockchain() (*ecdsa.PrivateKey, *core.Blockchain, error) {
+	dir, err := ioutil.TempDir("", "db")
+	if err != nil {
+		return nil, nil, err
+	}
+	db, err := db.New(dir)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	privK, err := core.NewKey()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var authNodes []*ecdsa.PublicKey
+	authNodes = append(authNodes, &privK.PublicKey)
+
+	bc := core.NewPoABlockchain(db, authNodes)
+	return privK, bc, nil
+}
 func TestNode(t *testing.T) {
 	dir, err := ioutil.TempDir("", "db")
 	assert.Nil(t, err)
@@ -49,16 +70,9 @@ func TestNodeSignature(t *testing.T) {
 }
 
 func TestBlockFromPendingTxs(t *testing.T) {
-	dir, err := ioutil.TempDir("", "db")
-	assert.Nil(t, err)
-	db, err := db.New(dir)
+	privK, bc, err := newTestPoABlockchain()
 	assert.Nil(t, err)
 
-	privK, err := core.NewKey()
-	assert.Nil(t, err)
-
-	dif := uint64(1)
-	bc := core.NewBlockchain(db, dif)
 	node, err := NewNode(privK, bc, true)
 	assert.Nil(t, err)
 
@@ -72,22 +86,14 @@ func TestBlockFromPendingTxs(t *testing.T) {
 	node.AddToPendingTxs(*tx)
 	block, err := node.BlockFromPendingTxs()
 	assert.Nil(t, err)
-	fmt.Println("h", block.Hash)
 	assert.True(t, core.CheckBlockPoW(block, node.Bc.Difficulty))
 	assert.True(t, node.Bc.VerifyBlock(block))
 }
 
 func TestBlockFromPendingTxsIteration(t *testing.T) {
-	dir, err := ioutil.TempDir("", "db")
-	assert.Nil(t, err)
-	db, err := db.New(dir)
+	privK, bc, err := newTestPoABlockchain()
 	assert.Nil(t, err)
 
-	privK, err := core.NewKey()
-	assert.Nil(t, err)
-
-	dif := uint64(1)
-	bc := core.NewBlockchain(db, dif)
 	node, err := NewNode(privK, bc, true)
 	assert.Nil(t, err)
 
@@ -109,16 +115,9 @@ func TestBlockFromPendingTxsIteration(t *testing.T) {
 }
 
 func TestFromGenesisToTenBlocks(t *testing.T) {
-	dir, err := ioutil.TempDir("", "db")
-	assert.Nil(t, err)
-	db, err := db.New(dir)
+	privK, bc, err := newTestPoABlockchain()
 	assert.Nil(t, err)
 
-	privK, err := core.NewKey()
-	assert.Nil(t, err)
-
-	dif := uint64(1)
-	bc := core.NewBlockchain(db, dif)
 	node, err := NewNode(privK, bc, true)
 	assert.Nil(t, err)
 
@@ -128,6 +127,7 @@ func TestFromGenesisToTenBlocks(t *testing.T) {
 	assert.NotEqual(t, genesisBlock.Signature, core.Signature{})
 	assert.NotEqual(t, genesisBlock.Hash, core.Hash{})
 
+	assert.True(t, node.Bc.VerifyBlock(genesisBlock))
 	// add the genesis block into the blockchain
 	err = node.Bc.AddBlock(genesisBlock)
 	assert.Nil(t, err)
@@ -135,7 +135,9 @@ func TestFromGenesisToTenBlocks(t *testing.T) {
 	assert.Equal(t, genesisBlock.Hash, node.Bc.LastBlock.Hash)
 
 	// TODO add another block
-	block := node.NewBlock([]core.Tx{})
+	block, err := node.NewBlock([]core.Tx{})
+	assert.Nil(t, err)
+	block.Print()
 	err = node.Bc.AddBlock(block)
 	assert.Nil(t, err)
 }

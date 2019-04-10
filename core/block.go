@@ -3,6 +3,7 @@ package core
 import (
 	"crypto/ecdsa"
 	"encoding/json"
+	"fmt"
 	"time"
 )
 
@@ -17,6 +18,15 @@ type Block struct {
 	Nonce     uint64
 	Hash      Hash
 	Signature []byte
+}
+
+// for testing
+func (block Block) Print() {
+	fmt.Println("height", block.Height)
+	fmt.Println("hash", block.Hash.String())
+	fmt.Println("PrevHash", block.PrevHash.String())
+	fmt.Println("timestamp", block.Timestamp.String())
+	fmt.Println("signature", block.Signature)
 }
 
 func (block Block) Copy() *Block {

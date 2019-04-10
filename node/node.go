@@ -33,6 +33,7 @@ func (node *Node) Sign(m []byte) (*core.Signature, error) {
 }
 
 func (node *Node) SignBlock(block *core.Block) error {
+	block.CalculateHash()
 	sig, err := core.Sign(node.PrivK, block.Hash[:])
 	if err != nil {
 		return err
@@ -46,9 +47,12 @@ func (node *Node) AddToPendingTxs(tx core.Tx) {
 }
 
 func (node *Node) BlockFromPendingTxs() (*core.Block, error) {
-	block := node.NewBlock(node.PendingTxs)
+	block, err := node.NewBlock(node.PendingTxs)
+	if err != nil {
+		return nil, err
+	}
 	block.PrevHash = node.Bc.LastBlock.Hash
-	err := block.CalculatePoW(node.Bc.Difficulty)
+	err = block.CalculatePoW(node.Bc.Difficulty)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +65,7 @@ func (node *Node) BlockFromPendingTxs() (*core.Block, error) {
 	return block, nil
 }
 
-func (node *Node) NewBlock(txs []core.Tx) *core.Block {
+func (node *Node) NewBlock(txs []core.Tx) (*core.Block, error) {
 	block := &core.Block{
 		Height:    node.Bc.GetHeight() + 1,
 		PrevHash:  node.Bc.LastBlock.Hash,
@@ -73,12 +77,17 @@ func (node *Node) NewBlock(txs []core.Tx) *core.Block {
 		Hash:      core.Hash{},
 		Signature: []byte{},
 	}
-	return block
+	block.CalculateHash()
+	err := node.SignBlock(block)
+	if err != nil {
+		return nil, err
+	}
+	return block, nil
 }
 
 func (node *Node) CreateGenesis() (*core.Block, error) {
 	block := &core.Block{
-		Height:    node.Bc.LastBlock.Height,
+		Height:    node.Bc.LastBlock.Height + 1,
 		PrevHash:  node.Bc.LastBlock.Hash,
 		Txs:       []core.Tx{},
 		Miner:     node.Addr,
@@ -89,10 +98,10 @@ func (node *Node) CreateGenesis() (*core.Block, error) {
 		Signature: []byte{},
 	}
 
+	block.CalculateHash()
 	err := node.SignBlock(block)
 	if err != nil {
 		return nil, err
 	}
-	block.CalculateHash()
 	return block, nil
 }

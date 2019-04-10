@@ -1,7 +1,6 @@
 package core
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,7 +15,7 @@ func TestAddress(t *testing.T) {
 	assert.Nil(t, err)
 
 	addr := AddressFromPrivK(privK)
-	fmt.Println(addr.String())
+	assert.NotEqual(t, addr, Address{})
 }
 
 func TestSignAndVerify(t *testing.T) {

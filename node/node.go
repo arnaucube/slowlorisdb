@@ -85,11 +85,45 @@ func (node *Node) NewBlock(txs []core.Tx) (*core.Block, error) {
 	return block, nil
 }
 
-func (node *Node) CreateGenesis() (*core.Block, error) {
+func (node *Node) CreateGenesis(pubK *ecdsa.PublicKey, amount uint64) (*core.Block, error) {
+	// pubK is the wallet where the first coins will be created
+	// amount is the amount of coins that will be created
+
+	in := core.Input{
+		TxId:  core.GenesisHashTxInput,
+		Vout:  0,
+		Value: amount,
+	}
+	var ins []core.Input
+	ins = append(ins, in)
+
+	out := core.Output{
+		Value: amount,
+	}
+	var outs []core.Output
+	outs = append(outs, out)
+
+	tx := core.Tx{
+		From:       &ecdsa.PublicKey{},
+		To:         pubK,
+		InputCount: uint64(0),
+		Inputs:     []core.Input{},
+		Outputs:    outs,
+		Signature:  []byte{},
+	}
+
+	// calculate TxId
+	// tx.CalculateTxId()
+	tx.TxId = core.GenesisHashTxInput
+	// sign transaction
+
+	var txs []core.Tx
+	txs = append(txs, tx)
+
 	block := &core.Block{
 		Height:    node.Bc.LastBlock.Height + 1,
 		PrevHash:  node.Bc.LastBlock.Hash,
-		Txs:       []core.Tx{},
+		Txs:       txs,
 		Miner:     node.Addr,
 		MinerPubK: &node.PrivK.PublicKey,
 		Timestamp: time.Now(),

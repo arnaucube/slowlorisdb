@@ -122,22 +122,81 @@ func TestFromGenesisToTenBlocks(t *testing.T) {
 	assert.Nil(t, err)
 
 	// create the genesis block
-	genesisBlock, err := node.CreateGenesis()
+	genesisBlock, err := node.CreateGenesis(&privK.PublicKey, uint64(100))
 	assert.Nil(t, err)
 	assert.NotEqual(t, genesisBlock.Signature, core.Signature{})
 	assert.NotEqual(t, genesisBlock.Hash, core.Hash{})
-
 	assert.True(t, node.Bc.VerifyBlock(genesisBlock))
+
 	// add the genesis block into the blockchain
 	err = node.Bc.AddBlock(genesisBlock)
 	assert.Nil(t, err)
 	assert.NotEqual(t, genesisBlock.Hash, core.Hash{})
 	assert.Equal(t, genesisBlock.Hash, node.Bc.LastBlock.Hash)
 
-	// TODO add another block
-	block, err := node.NewBlock([]core.Tx{})
+	// add another tx sending coins to the pubK0
+	privK0, err := core.NewKey()
 	assert.Nil(t, err)
-	block.Print()
+	pubK0 := privK0.PublicKey
+
+	var ins []core.Input
+	in := core.Input{
+		TxId:  genesisBlock.Txs[0].TxId,
+		Vout:  0,
+		Value: 100,
+	}
+	ins = append(ins, in)
+	var outs []core.Output
+	out0 := core.Output{
+		Value: 10,
+	}
+	out1 := core.Output{
+		Value: 90,
+	}
+	outs = append(outs, out0)
+	outs = append(outs, out1)
+	tx := core.NewTx(&privK.PublicKey, &pubK0, ins, outs)
+
+	// verify tx
+	txVerified := core.CheckTx(tx)
+	assert.True(t, txVerified)
+
+	// then create a new block with the tx and add it to the blockchain
+	var txs []core.Tx
+	txs = append(txs, *tx)
+	block, err := node.NewBlock(txs)
+	assert.Nil(t, err)
+	err = node.Bc.AddBlock(block)
+	assert.Nil(t, err)
+
+	// add another tx sending coins to the pubK1
+	privK1, err := core.NewKey()
+	assert.Nil(t, err)
+	pubK1 := privK1.PublicKey
+
+	ins = []core.Input{}
+	in = core.Input{
+		TxId:  block.Txs[0].TxId,
+		Vout:  0,
+		Value: 10,
+	}
+	ins = append(ins, in)
+	outs = []core.Output{}
+	out0 = core.Output{
+		Value: 10,
+	}
+	outs = append(outs, out0)
+	tx = core.NewTx(&pubK0, &pubK1, ins, outs)
+
+	// verify tx
+	txVerified = core.CheckTx(tx)
+	assert.True(t, txVerified)
+
+	// then create a new block with the tx and add it to the blockchain
+	txs = []core.Tx{}
+	txs = append(txs, *tx)
+	block, err = node.NewBlock(txs)
+	assert.Nil(t, err)
 	err = node.Bc.AddBlock(block)
 	assert.Nil(t, err)
 }

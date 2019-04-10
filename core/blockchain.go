@@ -143,7 +143,20 @@ func (bc *Blockchain) VerifyBlock(block *Block) bool {
 		return false
 	}
 
-	// verify block transactions
+	// verify block transactions (not if the block is the genesis block)
+	if !bytes.Equal(block.Txs[0].TxId[:], GenesisHashTxInput[:]) {
+		for _, tx := range block.Txs {
+			txVerified := CheckTx(&tx)
+			if !txVerified {
+				fmt.Println("tx could not be verified")
+				return false
+			}
+		}
+	}
+
+	// TODO in --> out0
+	//          -> out1
+	//          -> ...
 
 	return true
 }

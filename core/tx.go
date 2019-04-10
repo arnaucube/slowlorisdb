@@ -1,6 +1,12 @@
 package core
 
-import "crypto/ecdsa"
+import (
+	"crypto/ecdsa"
+	"encoding/json"
+	"fmt"
+)
+
+var GenesisHashTxInput = HashBytes([]byte("genesis"))
 
 type Input struct {
 	TxId  Hash
@@ -14,12 +20,24 @@ type Output struct {
 
 // Tx holds the data structure of a transaction
 type Tx struct {
+	TxId       Hash
 	From       *ecdsa.PublicKey
 	To         *ecdsa.PublicKey
 	InputCount uint64
 	Inputs     []Input
 	Outputs    []Output
 	Signature  []byte
+}
+
+func (tx *Tx) Bytes() []byte {
+	// TODO add parser, to use minimum amount of bytes
+	b, _ := json.Marshal(tx)
+	return b
+}
+
+func (tx *Tx) CalculateTxId() {
+	h := HashBytes(tx.Bytes())
+	tx.TxId = h
 }
 
 func NewTx(from, to *ecdsa.PublicKey, in []Input, out []Output) *Tx {
@@ -29,7 +47,9 @@ func NewTx(from, to *ecdsa.PublicKey, in []Input, out []Output) *Tx {
 		InputCount: uint64(len(in)),
 		Inputs:     in,
 		Outputs:    out,
+		Signature:  []byte{},
 	}
+	tx.CalculateTxId()
 	return tx
 }
 
@@ -46,7 +66,8 @@ func CheckTx(tx *Tx) bool {
 	for _, out := range tx.Outputs {
 		totalOut = totalOut + int(out.Value)
 	}
-	if totalIn < totalOut {
+	if totalIn != totalOut {
+		fmt.Println("totalIn != totalOut")
 		return false
 	}
 

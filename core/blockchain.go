@@ -3,10 +3,13 @@ package core
 import (
 	"bytes"
 	"crypto/ecdsa"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/arnaucube/slowlorisdb/db"
+	lvldberrors "github.com/syndtr/goleveldb/leveldb/errors"
 )
 
 type PoA struct {
@@ -99,11 +102,15 @@ func (bc *Blockchain) UpdateWalletsWithNewTx(tx *Tx) error {
 		if err != nil {
 			return err
 		}
+		fmt.Println("sent-->: balance of " + hex.EncodeToString(PackPubK(tx.From)[:10]) + ": " + strconv.Itoa(int(balance)))
 	}
 	for _, out := range tx.Outputs {
 		balanceBytes, err := bc.addressdb.Get(PackPubK(tx.To))
-		if err != nil {
+		if err != nil && err != lvldberrors.ErrNotFound {
 			return err
+		}
+		if err == lvldberrors.ErrNotFound {
+			balanceBytes = Uint64ToBytes(uint64(0))
 		}
 		balance := Uint64FromBytes(balanceBytes)
 		balance = balance + out.Value
@@ -111,6 +118,7 @@ func (bc *Blockchain) UpdateWalletsWithNewTx(tx *Tx) error {
 		if err != nil {
 			return err
 		}
+		fmt.Println("--> received: balance of " + hex.EncodeToString(PackPubK(tx.To)[:10]) + ": " + strconv.Itoa(int(balance)))
 	}
 	return nil
 
@@ -126,6 +134,16 @@ func (bc *Blockchain) GetBlock(hash Hash) (*Block, error) {
 		return nil, err
 	}
 	return block, nil
+}
+
+func (bc *Blockchain) GetBalance(pubK *ecdsa.PublicKey) (uint64, error) {
+	balanceBytes, err := bc.addressdb.Get(PackPubK(pubK))
+	if err != nil {
+		return uint64(0), err
+	}
+	balance := Uint64FromBytes(balanceBytes)
+	return balance, nil
+
 }
 
 func (bc *Blockchain) GetPrevBlock(hash Hash) (*Block, error) {

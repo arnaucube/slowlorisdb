@@ -2,6 +2,8 @@ package node
 
 import (
 	"crypto/ecdsa"
+	"encoding/hex"
+	"fmt"
 	"io/ioutil"
 	"testing"
 
@@ -122,6 +124,7 @@ func TestFromGenesisToTenBlocks(t *testing.T) {
 	assert.Nil(t, err)
 
 	// create the genesis block
+	// genesisBlock sends 100 to pubK
 	genesisBlock, err := node.CreateGenesis(&privK.PublicKey, uint64(100))
 	assert.Nil(t, err)
 	assert.NotEqual(t, genesisBlock.Signature, core.Signature{})
@@ -169,6 +172,12 @@ func TestFromGenesisToTenBlocks(t *testing.T) {
 	err = node.Bc.AddBlock(block)
 	assert.Nil(t, err)
 
+	balance, err := node.Bc.GetBalance(&pubK0)
+	assert.Nil(t, err)
+	fmt.Println(hex.EncodeToString(core.PackPubK(&pubK0)[:10]))
+	fmt.Println("balance in pubK0", balance)
+	assert.Equal(t, balance, uint64(100))
+
 	// add another tx sending coins to the pubK1
 	privK1, err := core.NewKey()
 	assert.Nil(t, err)
@@ -199,4 +208,10 @@ func TestFromGenesisToTenBlocks(t *testing.T) {
 	assert.Nil(t, err)
 	err = node.Bc.AddBlock(block)
 	assert.Nil(t, err)
+
+	balance, err = node.Bc.GetBalance(&pubK0)
+	assert.Nil(t, err)
+	fmt.Println(hex.EncodeToString(core.PackPubK(&pubK0)[:10]))
+	fmt.Println("balance in pubK0", balance)
+	assert.Equal(t, balance, uint64(90))
 }

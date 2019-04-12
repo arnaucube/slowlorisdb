@@ -137,7 +137,7 @@ func TestFromGenesisToTenBlocks(t *testing.T) {
 	assert.NotEqual(t, genesisBlock.Hash, core.Hash{})
 	assert.Equal(t, genesisBlock.Hash, node.Bc.LastBlock.Hash)
 
-	// add another tx sending coins to the pubK0
+	// add a tx sending coins to the pubK0
 	privK0, err := core.NewKey()
 	assert.Nil(t, err)
 	pubK0 := privK0.PublicKey
@@ -214,4 +214,94 @@ func TestFromGenesisToTenBlocks(t *testing.T) {
 	fmt.Println(hex.EncodeToString(core.PackPubK(&pubK0)[:10]))
 	fmt.Println("balance in pubK0", balance)
 	assert.Equal(t, balance, uint64(90))
+}
+
+func TestMultipleNodesAddingBlocks(t *testing.T) {
+	dirA, err := ioutil.TempDir("", "dbA")
+	assert.Nil(t, err)
+	dbA, err := db.New(dirA)
+	assert.Nil(t, err)
+	dirB, err := ioutil.TempDir("", "dbB")
+	assert.Nil(t, err)
+	dbB, err := db.New(dirB)
+	assert.Nil(t, err)
+
+	// node A
+	privKA, err := core.NewKey()
+	assert.Nil(t, err)
+
+	// node B
+	privKB, err := core.NewKey()
+	assert.Nil(t, err)
+
+	var authNodes []*ecdsa.PublicKey
+	authNodes = append(authNodes, &privKA.PublicKey)
+	authNodes = append(authNodes, &privKB.PublicKey)
+	bcA := core.NewPoABlockchain(dbA, authNodes)
+	bcB := core.NewPoABlockchain(dbB, authNodes)
+
+	nodeA, err := NewNode(privKA, bcA, true)
+	assert.Nil(t, err)
+	nodeB, err := NewNode(privKB, bcB, true)
+	assert.Nil(t, err)
+
+	// create genesisBlock that sends 100 to pubK of nodeA
+	genesisBlock, err := nodeA.CreateGenesis(&privKA.PublicKey, uint64(100))
+	assert.Nil(t, err)
+	assert.NotEqual(t, genesisBlock.Signature, core.Signature{})
+	assert.NotEqual(t, genesisBlock.Hash, core.Hash{})
+	assert.True(t, nodeA.Bc.VerifyBlock(genesisBlock))
+	// add the genesis block into the blockchain
+	assert.Equal(t, nodeA.Bc.LastBlock.Hash, nodeB.Bc.LastBlock.Hash)
+	err = nodeA.Bc.AddBlock(genesisBlock)
+	assert.Nil(t, err)
+	assert.NotEqual(t, genesisBlock.Hash, core.Hash{})
+	assert.Equal(t, genesisBlock.Hash, nodeA.Bc.LastBlock.Hash)
+	err = nodeB.Bc.AddBlock(genesisBlock)
+	assert.Nil(t, err)
+	assert.NotEqual(t, genesisBlock.Hash, core.Hash{})
+	assert.Equal(t, genesisBlock.Hash, nodeB.Bc.LastBlock.Hash)
+	assert.Equal(t, nodeA.Bc.LastBlock.Hash, nodeB.Bc.LastBlock.Hash)
+
+	// add a tx sending coins to the pubKB (of nodeB)
+	var ins []core.Input
+	in := core.Input{
+		TxId:  genesisBlock.Txs[0].TxId,
+		Vout:  0,
+		Value: 100,
+	}
+	ins = append(ins, in)
+	var outs []core.Output
+	out0 := core.Output{
+		Value: 10,
+	}
+	out1 := core.Output{
+		Value: 90,
+	}
+	outs = append(outs, out0)
+	outs = append(outs, out1)
+	tx := core.NewTx(&privKA.PublicKey, &privKB.PublicKey, ins, outs)
+	// verify tx
+	assert.True(t, core.CheckTx(tx))
+	// create a new block with the tx and add it to the blockchain
+	var txs []core.Tx
+	txs = append(txs, *tx)
+	block, err := nodeA.NewBlock(txs)
+	assert.Nil(t, err)
+
+	// nodeA adds the block
+	err = nodeA.Bc.AddBlock(block)
+	assert.Nil(t, err)
+	// nodeB adds the block
+	err = nodeB.Bc.AddBlock(block)
+	assert.Nil(t, err)
+
+	balanceA, err := nodeA.Bc.GetBalance(&privKA.PublicKey)
+	assert.Nil(t, err)
+	balanceB, err := nodeB.Bc.GetBalance(&privKB.PublicKey)
+	assert.Nil(t, err)
+	fmt.Println(hex.EncodeToString(core.PackPubK(&privKA.PublicKey)[:10]))
+	// check that the coins are moved from nodeA to nodeB
+	assert.Equal(t, balanceA, uint64(0))
+	assert.Equal(t, balanceB, uint64(100))
 }

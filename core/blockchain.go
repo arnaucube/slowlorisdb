@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/arnaucube/slowlorisdb/db"
+	log "github.com/sirupsen/logrus"
 	lvldberrors "github.com/syndtr/goleveldb/leveldb/errors"
 )
 
@@ -102,7 +103,7 @@ func (bc *Blockchain) UpdateWalletsWithNewTx(tx *Tx) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println("sent-->: balance of " + hex.EncodeToString(PackPubK(tx.From)[:10]) + ": " + strconv.Itoa(int(balance)))
+		log.Info("sent-->: balance of " + hex.EncodeToString(PackPubK(tx.From)[:10]) + ": " + strconv.Itoa(int(balance)))
 	}
 	for _, out := range tx.Outputs {
 		balanceBytes, err := bc.addressdb.Get(PackPubK(tx.To))
@@ -118,7 +119,7 @@ func (bc *Blockchain) UpdateWalletsWithNewTx(tx *Tx) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println("--> received: balance of " + hex.EncodeToString(PackPubK(tx.To)[:10]) + ": " + strconv.Itoa(int(balance)))
+		log.Info("--> received: balance of " + hex.EncodeToString(PackPubK(tx.To)[:10]) + ": " + strconv.Itoa(int(balance)))
 	}
 	return nil
 
@@ -171,14 +172,14 @@ func (bc *Blockchain) verifyBlockSignature(block *Block) bool {
 		}
 	}
 	if !signerIsMiner && len(bc.PoA.AuthMiners) > 0 {
-		fmt.Println("signer is not miner")
+		log.Error("signer is not miner")
 		return false
 	}
 
 	// get the signature
 	sig, err := SignatureFromBytes(block.Signature)
 	if err != nil {
-		fmt.Println("error parsing signature")
+		log.Error("error parsing signature")
 		return false
 	}
 
@@ -188,25 +189,30 @@ func (bc *Blockchain) verifyBlockSignature(block *Block) bool {
 
 func (bc *Blockchain) VerifyBlock(block *Block) bool {
 	// verify block signature
-	// TODO for the moment just covered the case of PoA blockchain
+	// for the moment just covered the case of PoA blockchain
 	if !bc.verifyBlockSignature(block) {
-		fmt.Println("signature verification error")
+		log.Error("signature verification error")
 		return false
 	}
 
 	// verify timestamp
+	if block.Timestamp.Unix() < bc.LastBlock.Timestamp.Unix() {
+		return false
+	}
 
 	// verify prev hash
 	// check that the block.PrevHash is the blockchain current last block
 	if !bytes.Equal(block.PrevHash[:], bc.LastBlock.Hash[:]) {
-		fmt.Println("block.PrevHash not equal to last block hash")
+		fmt.Println(block.PrevHash.String())
+		fmt.Println(bc.LastBlock.Hash.String())
+		log.Error("block.PrevHash not equal to last block hash")
 		return false
 	}
 
 	// verify block height
 	// check that the block height is the last block + 1
 	if block.Height != bc.LastBlock.Height+1 {
-		fmt.Println("block.Height error")
+		log.Error("block.Height error")
 		return false
 	}
 
@@ -215,7 +221,7 @@ func (bc *Blockchain) VerifyBlock(block *Block) bool {
 		for _, tx := range block.Txs {
 			txVerified := CheckTx(&tx)
 			if !txVerified {
-				fmt.Println("tx could not be verified")
+				log.Error("tx could not be verified")
 				return false
 			}
 		}

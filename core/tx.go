@@ -3,7 +3,8 @@ package core
 import (
 	"crypto/ecdsa"
 	"encoding/json"
-	"fmt"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var GenesisHashTxInput = HashBytes([]byte("genesis"))
@@ -55,11 +56,13 @@ func NewTx(from, to *ecdsa.PublicKey, in []Input, out []Output) *Tx {
 
 // CheckTx checks if the transaction is consistent
 func CheckTx(tx *Tx) bool {
-	// TODO check that inputs and outputs are not empty
-
 	// check that inputs == outputs
 	totalIn := 0
 	for _, in := range tx.Inputs {
+		// check that inputs are not empty, to avoid spam tx
+		if in.Value == uint64(0) {
+			return false
+		}
 		totalIn = totalIn + int(in.Value)
 	}
 	totalOut := 0
@@ -67,7 +70,7 @@ func CheckTx(tx *Tx) bool {
 		totalOut = totalOut + int(out.Value)
 	}
 	if totalIn != totalOut {
-		fmt.Println("totalIn != totalOut")
+		log.Info("totalIn != totalOut")
 		return false
 	}
 

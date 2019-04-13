@@ -8,13 +8,15 @@ import (
 )
 
 type Config struct {
-	Port string
-	Dest string
+	DbPath    string
+	Port      string
+	Dest      string
+	AuthNodes []string // PubKs in hex format of the AuthNodes for the blockchain
 }
 
-var C Config
+func MustRead(c *cli.Context) (*Config, error) {
+	var config Config
 
-func MustRead(c *cli.Context) error {
 	viper.SetConfigType("yaml")
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")          // adding home directory as first search path
@@ -27,10 +29,10 @@ func MustRead(c *cli.Context) error {
 	}
 
 	if err := viper.ReadInConfig(); err != nil {
-		return err
+		return nil, err
 	}
-	if err := viper.Unmarshal(&C); err != nil {
-		return err
+	if err := viper.Unmarshal(&config); err != nil {
+		return nil, err
 	}
-	return nil
+	return &config, nil
 }

@@ -33,6 +33,7 @@ func newTestPoABlockchain() (*ecdsa.PrivateKey, *core.Blockchain, error) {
 	bc := core.NewPoABlockchain(db, authNodes)
 	return privK, bc, nil
 }
+
 func TestNode(t *testing.T) {
 	dir, err := ioutil.TempDir("", "db")
 	assert.Nil(t, err)

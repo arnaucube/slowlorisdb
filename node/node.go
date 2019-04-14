@@ -28,6 +28,10 @@ func NewNode(privK *ecdsa.PrivateKey, bc *core.Blockchain, isMiner bool) (*Node,
 	return node, nil
 }
 
+func (node *Node) Start() error {
+	return nil
+}
+
 func (node *Node) Sign(m []byte) (*core.Signature, error) {
 	return core.Sign(node.PrivK, m)
 }

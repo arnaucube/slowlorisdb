@@ -29,6 +29,7 @@ var Commands = []cli.Command{
 	},
 }
 
+// creates the node, this needs to be executed for first time
 func cmdCreate(c *cli.Context) error {
 	log.Info("creating new keys of the node")
 	privK, err := core.NewKey()

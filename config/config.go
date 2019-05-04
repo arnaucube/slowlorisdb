@@ -8,10 +8,10 @@ import (
 )
 
 type Config struct {
-	DbPath    string
-	Port      string
-	Dest      string
-	AuthNodes []string // PubKs in hex format of the AuthNodes for the blockchain
+	StoragePath string
+	Port        string
+	Dest        string
+	AuthNodes   []string // PubKs in hex format of the AuthNodes for the blockchain
 }
 
 func MustRead(c *cli.Context) (*Config, error) {

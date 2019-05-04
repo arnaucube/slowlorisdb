@@ -19,7 +19,7 @@ func (addr Address) String() string {
 func NewKey() (*ecdsa.PrivateKey, error) {
 	curve := elliptic.P256()
 
-	privatekey := new(ecdsa.PrivateKey)
+	// privatekey := new(ecdsa.PrivateKey)
 	privatekey, err := ecdsa.GenerateKey(curve, rand.Reader)
 	if err != nil {
 		return nil, err
@@ -42,6 +42,11 @@ func UnpackPubK(b []byte) *ecdsa.PublicKey {
 
 func AddressFromPrivK(privK *ecdsa.PrivateKey) Address {
 	h := HashBytes(PackPubK(&privK.PublicKey))
+	return Address(h)
+}
+
+func AddressFromPubK(pubK *ecdsa.PublicKey) Address {
+	h := HashBytes(PackPubK(pubK))
 	return Address(h)
 }
 
@@ -74,8 +79,8 @@ type Signature struct {
 }
 
 func Sign(privK *ecdsa.PrivateKey, m []byte) (*Signature, error) {
-	r := big.NewInt(0)
-	s := big.NewInt(0)
+	// r := big.NewInt(0)
+	// s := big.NewInt(0)
 
 	hashMsg := HashBytes(m)
 

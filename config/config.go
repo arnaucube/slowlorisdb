@@ -9,7 +9,7 @@ import (
 
 type Config struct {
 	StoragePath string
-	Port        string
+	Port        int
 	Dest        string
 	AuthNodes   []string // PubKs in hex format of the AuthNodes for the blockchain
 }

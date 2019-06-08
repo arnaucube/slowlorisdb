@@ -13,6 +13,7 @@ import (
 	"github.com/arnaucube/slowlorisdb/core"
 	"github.com/arnaucube/slowlorisdb/db"
 	"github.com/arnaucube/slowlorisdb/node"
+	"github.com/arnaucube/slowlorisdb/peer"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
@@ -117,10 +118,9 @@ func cmdStart(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	err = node.Start()
-	if err != nil {
-		return err
-	}
+
+	p := peer.NewPeer(node, conf)
+	p.Start()
 
 	return nil
 }

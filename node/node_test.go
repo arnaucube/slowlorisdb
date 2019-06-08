@@ -252,13 +252,15 @@ func TestMultipleNodesAddingBlocks(t *testing.T) {
 	assert.NotEqual(t, genesisBlock.Signature, core.Signature{})
 	assert.NotEqual(t, genesisBlock.Hash, core.Hash{})
 	assert.True(t, nodeA.Bc.VerifyBlock(genesisBlock))
+
 	// add the genesis block into the blockchain
 	assert.Equal(t, nodeA.Bc.LastBlock.Hash, nodeB.Bc.LastBlock.Hash)
 	err = nodeA.Bc.AddBlock(genesisBlock)
 	assert.Nil(t, err)
 	assert.NotEqual(t, genesisBlock.Hash, core.Hash{})
 	assert.Equal(t, genesisBlock.Hash, nodeA.Bc.LastBlock.Hash)
-	err = nodeB.Bc.AddBlock(genesisBlock)
+
+	err = nodeB.ParseReceivedBlock(genesisBlock)
 	assert.Nil(t, err)
 	assert.NotEqual(t, genesisBlock.Hash, core.Hash{})
 	assert.Equal(t, genesisBlock.Hash, nodeB.Bc.LastBlock.Hash)
@@ -294,7 +296,7 @@ func TestMultipleNodesAddingBlocks(t *testing.T) {
 	err = nodeA.Bc.AddBlock(block)
 	assert.Nil(t, err)
 	// nodeB adds the block
-	err = nodeB.Bc.AddBlock(block)
+	err = nodeB.ParseReceivedBlock(block)
 	assert.Nil(t, err)
 
 	balanceA, err := nodeA.Bc.GetBalance(&privKA.PublicKey)

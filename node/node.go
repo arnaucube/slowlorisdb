@@ -7,6 +7,7 @@ import (
 	"github.com/arnaucube/slowlorisdb/core"
 )
 
+// Node
 type Node struct {
 	PrivK      *ecdsa.PrivateKey
 	Addr       core.Address
@@ -15,6 +16,7 @@ type Node struct {
 	PendingTxs []core.Tx
 }
 
+// NewNode creates a new node
 func NewNode(privK *ecdsa.PrivateKey, bc *core.Blockchain, isMiner bool) (*Node, error) {
 	addr := core.AddressFromPrivK(privK)
 
@@ -28,14 +30,12 @@ func NewNode(privK *ecdsa.PrivateKey, bc *core.Blockchain, isMiner bool) (*Node,
 	return node, nil
 }
 
-func (node *Node) Start() error {
-	return nil
-}
-
+// SignBlock performs a signature of a byte array with the node private key
 func (node *Node) Sign(m []byte) (*core.Signature, error) {
 	return core.Sign(node.PrivK, m)
 }
 
+// SignBlock performs a signature of a block with the node private key
 func (node *Node) SignBlock(block *core.Block) error {
 	block.CalculateHash()
 	sig, err := core.Sign(node.PrivK, block.Hash[:])
@@ -46,10 +46,12 @@ func (node *Node) SignBlock(block *core.Block) error {
 	return nil
 }
 
+// AddToPendingTxs adds a transaction the the node.PendingTxs
 func (node *Node) AddToPendingTxs(tx core.Tx) {
 	node.PendingTxs = append(node.PendingTxs, tx)
 }
 
+// BlockFromPendingTxs creates a new block from the pending transactions
 func (node *Node) BlockFromPendingTxs() (*core.Block, error) {
 	block, err := node.NewBlock(node.PendingTxs)
 	if err != nil {
@@ -69,6 +71,7 @@ func (node *Node) BlockFromPendingTxs() (*core.Block, error) {
 	return block, nil
 }
 
+// NewBlock creates a new block with the given txs
 func (node *Node) NewBlock(txs []core.Tx) (*core.Block, error) {
 	block := &core.Block{
 		Height:    node.Bc.GetHeight() + 1,
@@ -89,10 +92,10 @@ func (node *Node) NewBlock(txs []core.Tx) (*core.Block, error) {
 	return block, nil
 }
 
+// CreateGenesis creates the genesis block
+// pubK is the wallet where the first coins will be created
+// amount is the amount of coins that will be created
 func (node *Node) CreateGenesis(pubK *ecdsa.PublicKey, amount uint64) (*core.Block, error) {
-	// pubK is the wallet where the first coins will be created
-	// amount is the amount of coins that will be created
-
 	in := core.Input{
 		TxId:  core.GenesisHashTxInput,
 		Vout:  0,
@@ -142,4 +145,10 @@ func (node *Node) CreateGenesis(pubK *ecdsa.PublicKey, amount uint64) (*core.Blo
 		return nil, err
 	}
 	return block, nil
+}
+
+// ParseReceivedBlock is just a caller of node.Bc.AddBlock() at the Node level
+func (node *Node) ParseReceivedBlock(block *core.Block) error {
+	err := node.Bc.AddBlock(block)
+	return err
 }

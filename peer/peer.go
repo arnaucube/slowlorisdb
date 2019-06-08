@@ -8,7 +8,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/libp2p/go-libp2p"
+	"github.com/arnaucube/slowlorisdb/config"
+	"github.com/arnaucube/slowlorisdb/node"
+	libp2p "github.com/libp2p/go-libp2p"
 	crypto "github.com/libp2p/go-libp2p-crypto"
 	inet "github.com/libp2p/go-libp2p-net"
 	peerstore "github.com/libp2p/go-libp2p-peerstore"
@@ -64,7 +66,21 @@ func writeData(rw *bufio.ReadWriter) {
 	}
 }
 
-func Start(port int, dest string) error {
+type Peer struct {
+	n *node.Node
+	c *config.Config
+}
+
+func NewPeer(n *node.Node, conf *config.Config) *Peer {
+	return &Peer{
+		n: n,
+		c: conf,
+	}
+}
+func (peer *Peer) Start() error {
+	var port int = peer.c.Port
+	var dest string = peer.c.Dest
+
 	var r io.Reader
 	r = rand.Reader
 

@@ -1,6 +1,6 @@
 storagepath: "tmp/node1"
 port: 4000
-dest: 4001
+dest: "/ip4/127.0.0.1/tcp/3000/p2p/QmaEfH1xNum4dCGoxLBSmmYWKmWm3tWN2UH1D3putPquvS"
 authnodes:
-        "16be582c80c9b9be29b60f2bcd032654c21256b6bf74535743842bef33432132"
-        "96758cfdc821abad27c6301439af9f6d0873e237affc60fbc4cc5b33b41b8726"
+        - "16be582c80c9b9be29b60f2bcd032654c21256b6bf74535743842bef33432132"
+        - "96758cfdc821abad27c6301439af9f6d0873e237affc60fbc4cc5b33b41b8726"
